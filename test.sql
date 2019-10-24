@@ -18,6 +18,9 @@ block mash_apply_mapping(group_key)
 endblock
 
 
+
+{% for i in 1,2,3 %}
+
 SELECT
     id,
     mash_apply_mapping.unique_no,
@@ -39,3 +42,5 @@ UNION ALL
         *, NULL AS mash_contract_no
     FROM
         loan_front_manager.mf_business_loan_apply_log
+
+{% endfor %}
