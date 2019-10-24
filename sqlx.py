@@ -29,6 +29,7 @@ def render(content, define_map, block_map, local_map=None):
     if local_map:
         key_map.update(local_map) 
 
+
     symbols = re.findall(r'\{.+?\}', content)
     symbols = set(symbols)
     rendered_map = {}
@@ -141,3 +142,4 @@ def build(content, pretty=False):
 
 
 print(build(open('test.sql', encoding='utf8').read(), True))
+

@@ -19,7 +19,7 @@ endblock
 
 
 
-{% for i in 1,2,3 %}
+{% for n in 1,2,3,a,b,c %}
 
 SELECT
     id,
@@ -31,7 +31,11 @@ SELECT
     NULL AS loan_fial_reason,
     put_loan_amount AS loan_money,
     put_loan_time AS create_time,
-    mash_contract_no
+    mash_contract_no,
+    {% if n == 'a' %}
+        1 as is_a,
+    {% endif %}
+    {n} as mark
 FROM
     loan_data_inner.mf_ms_put_loan_account_check
 LEFT JOIN {mash_apply_mapping(mash_contract_no)} ON mash_apply_mapping.mash_contract_no = mf_ms_put_loan_account_check.contract_no
