@@ -3360,9 +3360,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 function sqlformat(sql) {
 	formater = factory()
-	return formater.format(sql)
+	return formater.format(sql, {language: 'sql', indent: '    '})
 }
 
 
-console.log(sqlformat('SELECT * FROM table1'))
+// console.log(sqlformat('SELECT * FROM table1'))
 
