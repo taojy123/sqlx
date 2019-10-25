@@ -1,9 +1,9 @@
 # todo
 
-- if
-- for
+- for ok
+- if  ok
 - if 嵌套
 - for 嵌套
-- push to pypi
+- publish to pypi
 - readme
 - unittest

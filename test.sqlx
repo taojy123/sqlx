@@ -1,9 +1,11 @@
+-- ! sqlx 脚本示例
 
+
+-- ! define 关键词定义全局变量
 define pronum pro002
 
-define jkcg '借款成功'
 
-
+-- ! block 定义一个可重用的内容块（类似函数），并可定义形式参数
 block mash_apply_mapping(group_key)
     (
         SELECT
@@ -18,8 +20,8 @@ block mash_apply_mapping(group_key)
 endblock
 
 
-
-{% for n in 1,2,3,a,b,c %}
+-- ! for 循环语法
+{% for n|m in 1|a,2|b,3|c %}
 
 SELECT
     id,
@@ -27,15 +29,21 @@ SELECT
     put_loan_borrowing_no AS loan_no,
     mash_apply_mapping.apply_no,
     '{pronum}' AS product_no,
-    {jkcg} AS loan_status,
+    '借款成功' AS loan_status,
     NULL AS loan_fial_reason,
     put_loan_amount AS loan_money,
     put_loan_time AS create_time,
     mash_contract_no,
-    {% if n == 'a' %}
+    -- ! if 判断语法
+    {% if m == 'a' %}
         1 as is_a,
     {% endif %}
-    {n} as mark
+    {% if n > 1 %}
+        1 as is_more,
+    {% else %}
+        0 as is_more,
+    {% endif %}
+    {n}_{m} as mark
 FROM
     loan_data_inner.mf_ms_put_loan_account_check
 LEFT JOIN {mash_apply_mapping(mash_contract_no)} ON mash_apply_mapping.mash_contract_no = mf_ms_put_loan_account_check.contract_no
@@ -48,3 +56,5 @@ UNION ALL
         loan_front_manager.mf_business_loan_apply_log
 
 {% endfor %}
+
+
