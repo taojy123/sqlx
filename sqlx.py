@@ -125,9 +125,6 @@ def render(content, define_map, block_map, local_map=None):
         a2 = repr(a2)
         result = eval(f'{a1} {op} {a2}')
 
-        print('---------------------')
-        print(f'{a1} {op} {a2}', result)
-
         assert result in (True, False)
 
         if result:
@@ -246,6 +243,7 @@ def build(content, pretty=False):
 
     sql = render(sqlx_content, define_map, block_map)
     sql = sql.strip()
+    # sql = remove_space_line(sql)
     sql = f'{HEADER}\n\n{sql}\n'
 
     # print(sql)
@@ -256,5 +254,6 @@ def build(content, pretty=False):
     return sql
 
 
-print(build(open('test.sqlx', encoding='utf8').read(), False))
+if __name__ == '__main__':
+    print(build(open('test.sqlx', encoding='utf8').read(), False))
 

@@ -7,3 +7,4 @@
 - publish to pypi
 - readme
 - unittest
+- import
