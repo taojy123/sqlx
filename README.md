@@ -2,15 +2,14 @@
 SQL Extension
 
 
-Usage
-
+Install
 ```
-# pip install sqlx
+pip install sqlx
+```
 
 
-import sqlx
-
-content = """
+demo.sqlx
+```
 -- ! define 关键词定义全局变量
 define pronum pro002
 
@@ -59,15 +58,11 @@ UNION ALL
         mf_business_loan_apply_log
 
 {% endfor %}
-
-"""
-
-
-sql = sqlx.build(content)
-
-
-print(sql)
-
-
 ```
+
+Build sql
+```
+sqlx ./demo.sqlx
+```
+
 

@@ -3,6 +3,7 @@
 # 语法参考 test.sqlx
 
 import os
+import sys
 import re
 import pprint
 
@@ -19,9 +20,12 @@ COMMENT_PREFIX = '-- !'
 OPERATORS = ['>', '<', '>=', '<=', '==', '!=']
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
 def sqlformat(sql):
     # sql 美化
-    js = open('sqlformat.js').read()
+    js = open(os.path.join(BASE_DIR, 'sqlformat.js')).read()
     ctx = js2py.EvalJs()
     ctx.execute(js)
     result = ctx.sqlformat(sql)
@@ -252,6 +256,34 @@ def build(content, pretty=False):
         sql = sqlformat(sql)
 
     return sql
+
+
+def auto():
+    # pip intall sqlx
+    # sqlx [path/to/sqlxfiles
+
+    args = sys.argv
+
+    if len(args) > 1:
+        path = args[1]
+    else:
+        path = '.'
+
+    if os.path.isdir(path):
+        files = os.listdir(path)
+        files = [file for file in files if file.endswith('.sqlx')]
+    elif os.path.isfile(path) and path.endswith('.sqlx'):
+        files = [path]
+    else:
+        print('Usage: sqlx path/to/sqlxfiles')
+        return 1
+
+    for file in files:
+        # change xx.sqlx to xx.sql
+        new_file = file[:-1]
+        content = build(open(file, encoding='utf8').read())
+        open(new_file, 'w').write(content)
+        print(f'{new_file} built')
 
 
 if __name__ == '__main__':
