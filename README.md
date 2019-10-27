@@ -2,67 +2,137 @@
 SQL Extension
 一种扩展 sql 的语言，目标是打造 "易读易写 方便维护" 的 sql 脚本
 
-Install
+
+## 安装
+`Windows` 系统直接下载 `SqlBuilder.exe` 即可
+
+
+
+## 语法简介
+
+1. 变量替换
 ```
-pip install sqlx
+define 变量名 变量值
+
+{变量名}
+```
+
+示例 sqlx:
+```
+define a id
+define b name
+define c students
+
+SELECT {a}, {b} FROM {c} WHERE {a} > 10
+```
+
+编译生成 sql:
+```
+SELECT id, name FROM students WHERE id > 10
 ```
 
 
-demo.sqlx
+2. 利用片段（block）来批量生成脚本
+定义片段
 ```
--- ! define 关键词定义全局变量
-define pronum pro002
-
-
--- ! block 定义一个可重用的内容块（类似函数），并可定义形式参数
-block mash_apply_mapping(group_key)
-    (
-        SELECT
-            mash_contract_no,
-            max(unique_no) AS unique_no,
-            max(apply_no) AS apply_no
-        FROM
-            loan_front_manager.mf_business_apply
-        GROUP BY
-            {group_key}
-    ) AS mash_apply_mapping
+block 片段名(参数名)
+    片段内容
 endblock
 
+{片段名(参数值)}
+```
 
--- ! for 循环语法
-{% for n|m in 1|a,2|b,3|c %}
+在 sqlx 中可以直接已定义片段并传入相应的参数
+示例如下：
+```
+block good_students(score)
+    (
+        SELECT
+            *
+        FROM
+            students
+        WHERE
+            score > {score}
+    ) AS good_students
+endblock
 
-SELECT
-    id,
-    '{pronum}' AS product_no,
-    mash_contract_no,
-    -- ! if 判断语法
-    {% if m == 'a' %}
-        1 as is_a,
-    {% endif %}
-    {% if n > 1 %}
-        1 as is_more,
-    {% else %}
-        0 as is_more,
-    {% endif %}
-    {n}_{m} as mark
-FROM
-    account_check
-LEFT JOIN {mash_apply_mapping(mash_contract_no)} ON mash_apply_mapping.mash_contract_no = account_check.contract_no
-WHERE
-    unique_no IS NOT NULL
-UNION ALL
-    SELECT
-        *, NULL AS mash_contract_no
-    FROM
-        mf_business_loan_apply_log
+SELECT 
+    name 
+FROM 
+    {good_students(80)}
+```
 
+编译生成 sql:
+```
+SELECT 
+    name 
+FROM 
+    (
+        SELECT
+            *
+        FROM
+            students
+        WHERE
+            score > {score}
+    ) AS good_students
+```
+
+
+3. 循环
+```
+{% for 循环变量名 in 循环变量值 %}
+    循环体
 {% endfor %}
 ```
 
-Build sql
+
+示例 sqlx:
 ```
-sqlx ./demo.sqlx
+{% for n in table1,table2,table3 %}
+    SELECT * FROM {n};
+{% endfor %}
+```
+
+编译生成 sql:
+```
+SELECT * FROM table1;
+SELECT * FROM table2;
+SELECT * FROM table3;
 ```
 
 
+4. 判断
+```
+{% if 判断条件 %}
+    判断为真 对应代码
+{% else% }
+    判断为假 对应代码
+{% endif %}
+```
+
+
+示例 sqlx:
+```
+{% for n in table1,table2,table3 %}
+    {% if n == table1 %}
+        SELECT id, name FROM {n};
+    {% else% }
+        SELECT * FROM {n};
+    {% endif %}
+{% endfor %}
+```
+
+编译生成 sql:
+```
+SELECT id, name FROM table1;
+SELECT * FROM table2;
+SELECT * FROM table3;
+```
+
+
+
+
+在 `Python3` 环境下，可以使用 `pip` 一键安装
+```
+pip install sqlx
+```
