@@ -1,3 +1,8 @@
+
+import js2py
+
+
+js = r"""
 // https://github.com/zeroturnaround/sql-formatter
 var factory = function() {
 return /******/ (function(modules) { // webpackBootstrap
@@ -3365,4 +3370,16 @@ function sqlformat(sql) {
 
 
 // console.log(sqlformat('SELECT * FROM table1'))
+"""
+
+
+
+def sqlformat(sql):
+    # sql 美化
+    ctx = js2py.EvalJs()
+    ctx.execute(js)
+    result = ctx.sqlformat(sql)
+    return result
+
+
 

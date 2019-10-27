@@ -1,6 +1,6 @@
 # sqlx
 SQL Extension
-
+一种扩展 sql 的语言，目标是打造 "易读易写 方便维护" 的 sql 脚本
 
 Install
 ```

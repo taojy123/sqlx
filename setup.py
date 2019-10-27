@@ -29,7 +29,7 @@ setup(
     install_requires=install_requires,
     license='MIT License',
     packages=find_packages(),
-    py_modules=['sqlx'],
+    py_modules=['sqlx', 'sqlformat'],
     entry_points={
         'console_scripts': ['sqlx=sqlx:auto'],
     },

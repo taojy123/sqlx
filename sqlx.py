@@ -6,8 +6,8 @@ import os
 import sys
 import re
 import pprint
+import sqlformat
 
-import js2py
 
 
 # 构建后添加的头部文字
@@ -21,15 +21,6 @@ OPERATORS = ['>', '<', '>=', '<=', '==', '!=']
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-def sqlformat(sql):
-    # sql 美化
-    js = open(os.path.join(BASE_DIR, 'sqlformat.js')).read()
-    ctx = js2py.EvalJs()
-    ctx.execute(js)
-    result = ctx.sqlformat(sql)
-    return result
 
 
 def remove_space_line(sql):
@@ -253,7 +244,7 @@ def build(content, pretty=False):
     # print(sql)
 
     if pretty:
-        sql = sqlformat(sql)
+        sql = sqlformat.sqlformat(sql)
 
     return sql
 
@@ -287,5 +278,5 @@ def auto():
 
 
 if __name__ == '__main__':
-    print(build(open('test.sqlx', encoding='utf8').read(), False))
+    print(build(open('test.sqlx', encoding='utf8').read(), True))
 
