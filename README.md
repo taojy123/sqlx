@@ -13,7 +13,7 @@ SQL Extension
 1. 通过 `define` 定义变量，可在脚本中反复引用
 
 示例:
-```
+```sql
 define field_name age
 
 SELECT {field_name} from students WHERE {field_name} > 10;
@@ -21,7 +21,7 @@ SELECT {field_name} from teachers WHERE {field_name} > 10;
 ```
 
 对应编译生成的 sql 为:
-```
+```sql
 SELECT age from students WHERE age > 10;
 SELECT age from teachers WHERE age > 10;
 ```
@@ -30,7 +30,7 @@ SELECT age from teachers WHERE age > 10;
 2. 通过 `block` 定义脚本片段，并反复引用
 
 示例:
-```
+```sql
 -- ! 定义片段
 block good_students(score)
     (
@@ -48,7 +48,7 @@ SELECT count(*) FROM {good_students(80)};
 ```
 
 对应编译生成的 sql 为:
-```
+```sql
 SELECT name FROM 
     (
         SELECT
@@ -78,14 +78,14 @@ SELECT count(*) FROM
 
 
 示例1:
-```
+```sql
 {% for n in table1,table2,table3 %}
     SELECT * FROM {n};
 {% endfor %}
 ```
 
 对应编译生成的 sql 为:
-```
+```sql
 SELECT * FROM table1;
 SELECT * FROM table2;
 SELECT * FROM table3;
@@ -93,14 +93,14 @@ SELECT * FROM table3;
 
 
 示例2:
-```
+```sql
 {% for n|m in table1|id,table2|name,table3|age %}
     SELECT {m} FROM {n};
 {% endfor %}
 ```
 
 对应编译生成的 sql 为:
-```
+```sql
 SELECT id FROM table1;
 SELECT name FROM table2;
 SELECT age FROM table3;
@@ -112,7 +112,7 @@ SELECT age FROM table3;
 
 
 示例1:
-```
+```sql
 define a 8
 
 {% if {a} > 4 %}
@@ -121,12 +121,12 @@ define a 8
 ```
 
 对应编译生成的 sql 为:
-```
+```sql
 SELECT * FROM table1;
 ```
 
 示例2:
-```
+```sql
 {% for n in table1,table2,table3 %}
     {% if n == table1 %}
         SELECT id, name FROM {n};
@@ -137,7 +137,7 @@ SELECT * FROM table1;
 ```
 
 对应编译生成的 sql 为:
-```
+```sql
 SELECT id, name FROM table1;
 SELECT * FROM table2;
 SELECT * FROM table3;

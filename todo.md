@@ -8,3 +8,5 @@
 - readme
 - unittest
 - import
+- sublime text 插件
+- vscode 插件
