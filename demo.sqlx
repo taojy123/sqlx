@@ -1,0 +1,7 @@
+{% for n in table1,table2,table3 %}
+    {% if n == table1 %}
+        SELECT id, name FROM {n};
+    {% else% }
+        SELECT * FROM {n};
+    {% endif %}
+{% endfor %}

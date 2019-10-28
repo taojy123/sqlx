@@ -3,48 +3,35 @@ SQL Extension
 一种扩展 sql 的语言，目标是打造 "易读易写 方便维护" 的 sql 脚本
 
 
-## 安装
-`Windows` 系统直接下载 `SqlBuilder.exe` 即可
-
+## 安装使用
+`Windows` 系统直接下载 `SqlBuilder.exe` 放置于 `sqlx` 脚本同目录下
+双击 `SqlBuilder.exe` 即可完成自动编译，生成 `sql` 文件
 
 
 ## 语法简介
 
-1. 变量替换
-```
-define 变量名 变量值
+1. 通过 `define` 定义变量，可在脚本中反复引用
 
-{变量名}
+示例:
 ```
+define field_name age
 
-示例 sqlx:
-```
-define a id
-define b name
-define c students
-
-SELECT {a}, {b} FROM {c} WHERE {a} > 10
+SELECT {field_name} from students WHERE {field_name} > 10;
+SELECT {field_name} from teachers WHERE {field_name} > 10;
 ```
 
-编译生成 sql:
+对应编译生成的 sql 为:
 ```
-SELECT id, name FROM students WHERE id > 10
+SELECT age from students WHERE age > 10;
+SELECT age from teachers WHERE age > 10;
 ```
 
 
-2. 利用片段（block）来批量生成脚本
-定义片段
-```
-block 片段名(参数名)
-    片段内容
-endblock
+2. 通过 `block` 定义脚本片段，并反复引用
 
-{片段名(参数值)}
+示例:
 ```
-
-在 sqlx 中可以直接已定义片段并传入相应的参数
-示例如下：
-```
+-- ! 定义片段
 block good_students(score)
     (
         SELECT
@@ -56,44 +43,48 @@ block good_students(score)
     ) AS good_students
 endblock
 
-SELECT 
-    name 
-FROM 
-    {good_students(80)}
+SELECT name FROM {good_students(80)};
+SELECT count(*) FROM {good_students(80)};
 ```
 
-编译生成 sql:
+对应编译生成的 sql 为:
 ```
-SELECT 
-    name 
-FROM 
+SELECT name FROM 
     (
         SELECT
             *
         FROM
             students
         WHERE
-            score > {score}
+            score > 80
     ) AS good_students
+;
+SELECT count(*) FROM 
+    (
+        SELECT
+            *
+        FROM
+            students
+        WHERE
+            score > 80
+    ) AS good_students
+;
 ```
 
 
 3. 循环
-```
-{% for 循环变量名 in 循环变量值 %}
-    循环体
-{% endfor %}
-```
+通过 `for` 批量循环生成脚本（暂不支持循环嵌套）
 
 
-示例 sqlx:
+
+示例1:
 ```
 {% for n in table1,table2,table3 %}
     SELECT * FROM {n};
 {% endfor %}
 ```
 
-编译生成 sql:
+对应编译生成的 sql 为:
 ```
 SELECT * FROM table1;
 SELECT * FROM table2;
@@ -101,17 +92,40 @@ SELECT * FROM table3;
 ```
 
 
-4. 判断
+示例2:
 ```
-{% if 判断条件 %}
-    判断为真 对应代码
-{% else% }
-    判断为假 对应代码
+{% for n|m in table1|id,table2|name,table3|age %}
+    SELECT {m} FROM {n};
+{% endfor %}
+```
+
+对应编译生成的 sql 为:
+```
+SELECT id FROM table1;
+SELECT name FROM table2;
+SELECT age FROM table3;
+```
+
+
+4. 判断
+通过 `if` 生成逻辑分支脚本（暂不支持 if 嵌套）
+
+
+示例1:
+```
+define a 8
+
+{% if {a} > 4 %}
+    SELECT * FROM table1;
 {% endif %}
 ```
 
+对应编译生成的 sql 为:
+```
+SELECT * FROM table1;
+```
 
-示例 sqlx:
+示例2:
 ```
 {% for n in table1,table2,table3 %}
     {% if n == table1 %}
@@ -122,7 +136,7 @@ SELECT * FROM table3;
 {% endfor %}
 ```
 
-编译生成 sql:
+对应编译生成的 sql 为:
 ```
 SELECT id, name FROM table1;
 SELECT * FROM table2;
@@ -132,7 +146,10 @@ SELECT * FROM table3;
 
 
 
-在 `Python3` 环境下，可以使用 `pip` 一键安装
+
+## 安装 Python 模块
 ```
 pip install sqlx
 ```
+
+

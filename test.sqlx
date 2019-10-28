@@ -30,6 +30,7 @@ SELECT
     -- ! if 判断语法
     {% if m == a %}
         1 as is_a,
+    {% endif %}
     {% if m == 'b' %}
         1 as is_b,
     {% endif %}
