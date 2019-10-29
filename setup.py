@@ -2,6 +2,8 @@
 
 from setuptools import setup, find_packages
 
+from sqlx import VERSION
+
 
 try:
     long_description = open('README.md', encoding='utf8').read()
@@ -18,7 +20,7 @@ for line in open('requirements.txt', encoding='utf8').readlines():
 
 setup(
     name='sqlx',
-    version='0.0.7',
+    version=VERSION,
     description='SQL Extension | SQL 语法拓展，目标是打造 "易读易写 方便维护" 的 sql 脚本',
     long_description=long_description,
     long_description_content_type="text/markdown",
