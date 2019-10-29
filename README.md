@@ -98,9 +98,9 @@ SELECT * FROM table3;
 
 示例2:
 ```sql
-{% for n|m in table1|id,table2|name,table3|age %}
+{ % for n|m in table1|id,table2|name,table3|age % }
     SELECT {m} FROM {n};
-{% endfor %}
+{ % endfor % }
 ```
 
 编译生成 sql 为:

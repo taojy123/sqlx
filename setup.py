@@ -4,13 +4,13 @@ from setuptools import setup, find_packages
 
 
 try:
-    long_description = open('README.md').read()
+    long_description = open('README.md', encoding='utf8').read()
 except Exception as e:
     long_description = ''
 
 
 install_requires = []
-for line in open('requirements.txt').readlines():
+for line in open('requirements.txt', encoding='utf8').readlines():
     line = line.strip()
     if line and not line.startswith('#'):
         install_requires.append(line)
@@ -18,7 +18,7 @@ for line in open('requirements.txt').readlines():
 
 setup(
     name='sqlx',
-    version='0.0.5',
+    version='0.0.7',
     description='SQL Extension | SQL 语法拓展，目标是打造 "易读易写 方便维护" 的 sql 脚本',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -39,7 +39,7 @@ setup(
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3 :: Only',
         'Topic :: Software Development :: Libraries'
     ],
 )
