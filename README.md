@@ -1,10 +1,14 @@
 # sqlx
+
 SQL Extension
+
 一种扩展 sql 的语言，目标是打造 "易读易写 方便维护" 的 sql 脚本
 
 
 ## 使用方法
+
 Windows 系统，直接下载 [SqlBuilder.exe](https://github.com/taojy123/sqlx/releases) 放置于 `sqlx` 脚本同目录下
+
 双击 `SqlBuilder.exe` 即可完成自动编译，生成 `sql` 文件
 
 
@@ -150,8 +154,9 @@ SELECT * FROM table3;
 
 ## 在 Python3 程序中使用 sqlx 模块
 
-如果你熟悉 Python，这里还特别为你提供了 sqlx 的 python 模块包
-可以方便地安装，以及更加灵活地处理和编译脚本
+如果使用 Python，这里还特别为你提供了 sqlx 的 python 模块包
+
+可以方便地跨平台安装，以及更加灵活地处理和编译脚本
 
 ### 安装
 ```
