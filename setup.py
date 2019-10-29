@@ -18,7 +18,7 @@ for line in open('requirements.txt').readlines():
 
 setup(
     name='sqlx',
-    version='0.0.4',
+    version='0.0.5',
     description='SQL Extension | SQL 语法拓展，目标是打造 "易读易写 方便维护" 的 sql 脚本',
     long_description=long_description,
     long_description_content_type="text/markdown",

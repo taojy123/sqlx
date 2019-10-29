@@ -249,16 +249,16 @@ def build(content, pretty=False):
     return sql
 
 
-def auto():
+def auto(path='.', pretty=False):
     # pip intall sqlx
-    # sqlx [path/to/sqlxfiles
+    # sqlx [path/to/sqlxfiles]
 
     args = sys.argv
-
     if len(args) > 1:
         path = args[1]
-    else:
-        path = '.'
+
+    if 'pretty' in args:
+        pretty = True
 
     if os.path.isdir(path):
         files = os.listdir(path)
@@ -270,13 +270,32 @@ def auto():
         return 1
 
     for file in files:
-        # change xx.sqlx to xx.sql
-        new_file = file[:-1]
-        content = build(open(file, encoding='utf8').read())
-        open(new_file, 'w').write(content)
-        print(f'{new_file} built')
+        # build xx.sqlx to dist/xx.sql
+
+        dirname, filename = os.path.split(file)
+        dirname = os.path.join(dirname, 'dist')
+        filename = os.path.join(dirname, filename[:-1])
+
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        for encoding in ['utf8', 'gbk']:
+            try:
+                sqlx_content = open(file, encoding=encoding).read()
+                break
+            except Exception as e:
+                encoding = None
+                
+        if not encoding:
+            print(file, 'read failed!')
+
+        sql_content = build(sqlx_content, pretty)
+        open(filename, 'w', encoding=encoding).write(sql_content)
+        print(f'{filename} built')
+
+    print('Finish!')
 
 
 if __name__ == '__main__':
-    print(build(open('test.sqlx', encoding='utf8').read(), True))
+    print(build(open('demo.sqlx', encoding='utf8').read(), True))
 

@@ -1,12 +1,15 @@
 # todo
 
+
+- define ok
+- block ok
 - for ok
 - if  ok
+- PYPI ok
+- readme ok
+- import
 - if 嵌套
 - for 嵌套
-- publish to pypi
-- readme
 - unittest
-- import
-- sublime text 插件
-- vscode 插件
+- SublimeText 插件
+- VSCode 插件
