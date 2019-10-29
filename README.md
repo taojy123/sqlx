@@ -4,7 +4,7 @@ SQL Extension
 
 
 ## 使用方法
-`Windows` 系统直接下载 [SqlBuilder.exe](https://github.com/taojy123/sqlx/releases) 放置于 `sqlx` 脚本同目录下
+`Windows系统` 直接下载 [SqlBuilder.exe](https://github.com/taojy123/sqlx/releases) 放置于 `sqlx` 脚本同目录下
 双击 `SqlBuilder.exe` 即可完成自动编译，生成 `sql` 文件
 
 
