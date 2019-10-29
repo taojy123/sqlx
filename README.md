@@ -120,7 +120,7 @@ SELECT age FROM table3;
 ```sql
 define a 8
 
-{% if {a} > 4 %}
+{% if a > 4 %}
     SELECT * FROM table1;
 {% endif %}
 ```
