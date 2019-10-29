@@ -84,9 +84,9 @@ SELECT count(*) FROM
 
 示例1:
 ```sql
-{ % for n in table1,table2,table3 % }
+{% for n in table1,table2,table3 %}
     SELECT * FROM {n};
-{ % endfor % }
+{% endfor %}
 ```
 
 编译生成 sql 为:
@@ -99,9 +99,9 @@ SELECT * FROM table3;
 
 示例2:
 ```sql
-{ % for n|m in table1|id,table2|name,table3|age % }
+{% for n|m in table1|id,table2|name,table3|age %}
     SELECT {m} FROM {n};
-{ % endfor % }
+{% endfor %}
 ```
 
 编译生成 sql 为:
@@ -120,9 +120,9 @@ SELECT age FROM table3;
 ```sql
 define a 8
 
-{ % if {a} > 4 % }
+{% if {a} > 4 %}
     SELECT * FROM table1;
-{ % endif % }
+{% endif %}
 ```
 
 编译生成 sql 为:
@@ -132,13 +132,13 @@ SELECT * FROM table1;
 
 示例2:
 ```sql
-{ % for n in table1,table2,table3 % }
-    { % if n == table1 % }
+{% for n in table1,table2,table3 %}
+    {% if n == table1 %}
         SELECT id, name FROM {n};
-    { % else% }
+    {% else%}
         SELECT * FROM {n};
-    { % endif % }
-{ % endfor % }
+    {% endif %}
+{% endfor %}
 ```
 
 编译生成 sql 为:
@@ -169,13 +169,13 @@ pip install sqlx
 import sqlx
 
 my_script = """
-{ % for n in table1,table2,table3 % }
-    { % if n == table1 % }
+{% for n in table1,table2,table3 %}
+    {% if n == table1 %}
         SELECT id, name FROM {n};
-    { % else% }
+    {% else%}
         SELECT * FROM {n};
-    { % endif % }
-{ % endfor % }
+    {% endif %}
+{% endfor %}
 """
 
 sql = sqlx.build(my_script, pretty=True)
