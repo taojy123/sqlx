@@ -313,5 +313,5 @@ if __name__ == '__main__':
     except:
         traceback.print_exc()
         print('See https://github.com/taojy123/sqlx/blob/master/README.md for help')
-    input('Press Enter Exit..')
+    input('Press Enter to Exit..')
 
