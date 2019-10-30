@@ -312,5 +312,6 @@ if __name__ == '__main__':
         auto()
     except:
         traceback.print_exc()
-        input('See https://github.com/taojy123/sqlx/blob/master/README.md for help')
+        print('See https://github.com/taojy123/sqlx/blob/master/README.md for help')
+    input('Press Enter Exit..')
 
