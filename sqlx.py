@@ -5,7 +5,9 @@
 import os
 import sys
 import re
+import traceback
 import pprint
+
 import sqlformat
 
 
@@ -95,20 +97,15 @@ def render(content, define_map, block_map, local_map=None):
                 break
         assert a1 and a2, f'{condition} 未找到合法的关系运算符!'
 
-        # 判断项默认以字符串类型比较，如果正好是变量名称则转为变量值，如果外加单引号或双引号则强制为原字符串
-        r1 = re.findall(r'''^['"](.+)['"]$''', a1)
-        if r1:
-            a1 = r1[0]
-        elif a1 in key_map:
-            a1 = key_map[a1]
+        # 判断项默认以字符串类型比较
+        # 如果以 $ 开头后接变量名，则转为对应的变量值
+        if a1.startswith('$') and a1[1:] in key_map:
+            a1 = key_map[a1[1:]]
 
-        r2 = re.findall(r'''^['"](.+)['"]$''', a2)
-        if r2:
-            a2 = r2[0]
-        elif a2 in key_map:
-            a2 = key_map[a2]
+        if a2.startswith('$') and a2[1:] in key_map:
+            a2 = key_map[a2[1:]]
 
-        # 比较前会先尝试将两个变量转为数字类型
+        # 先尝试将两个变量转为数字类型再比较
         try:
             a1 = float(a1)
         except ValueError as e:
@@ -163,6 +160,8 @@ def render(content, define_map, block_map, local_map=None):
             assert len(param_names) == len(params), f'{tag} block 参数数量不正确!'
             local_map = {}
             for name, value in zip(param_names, params):
+                if value.startswith('$') and value[1:] in key_map:
+                    value = key_map[value[1:]]
                 local_map[name] = value
             rendered_block = render(block_content, define_map, block_map, local_map)
             # 对于块替换，为了更好的视觉体验，先将渲染后的块内容保存下来，接下来用到
