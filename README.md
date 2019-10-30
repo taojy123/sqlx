@@ -158,7 +158,7 @@ SELECT * FROM table3;
 
 ## 其他系统平台，通过 Python3 安装使用
 
-如果你的系统无法运行 `sqlx.exe`，可以先安装 [Python3](https://www.python.org/downloads/)，然后使用 pip 命令一键安装
+如果你的系统无法运行 `sqlx.exe`，可以先安装 [Python3](https://www.python.org/downloads/)，然后使用 `pip` 命令一键安装
 
 ```
 pip install sqlx
@@ -167,7 +167,7 @@ pip install sqlx
 
 ### 使用 `sqlx` 命令行工具
 
-1. 直接执行 `sqlx` 命令，可一键编译当前目录下的所有 `.sqlx 脚本文件`
+1. 安装后直接执行 `sqlx` 命令，可一键编译当前目录下的所有 `.sqlx 脚本文件`
 ```
 $ ls
 test1.sqlx    test2.sqlx
