@@ -5,14 +5,6 @@ SQL Extension
 一种扩展 sql 的语言，目标是打造 "易读易写 方便维护" 的 sql 脚本
 
 
-
-## 使用方法
-
-Windows 系统，直接下载 [sqlx.exe](https://github.com/taojy123/sqlx/releases) 放置于 `.sqlx 脚本文件` 同目录下
-
-双击 `sqlx.exe` 即可完成自动编译，在 `dist` 目录中生成 `sql` 文件
-
-
 ## 语法简介
 
 ### 1. 通过 `define` 定义变量，可在脚本中反复引用
@@ -152,40 +144,30 @@ SELECT * FROM table3;
 更多示例可参考 [demo.sqlx](https://github.com/taojy123/sqlx/blob/master/demo.sqlx)
 
 
+-------
 
-## 在 Python3 程序中使用 sqlx 模块
+## 使用方法
 
-如果使用 Python，这里还特别为你提供了 sqlx 的 python 模块包
+`Windows 64位系统`，直接下载 [sqlx.exe](https://github.com/taojy123/sqlx/releases) 放置于 `.sqlx 脚本文件` 同目录下
 
-可以方便地跨平台安装，以及更加灵活地处理和编译脚本
+双击 `sqlx.exe` 即可在 `dist` 目录中生成对应 `sql` 文件
 
-### 安装
+
+-------
+
+
+## 其他系统平台，通过 Python3 安装使用
+
+如果你的系统无法运行 `sqlx.exe`，可以先安装 [Python3](https://www.python.org/downloads/)，然后使用 pip 命令一键安装
+
 ```
 pip install sqlx
-```
-
-### 使用 `sqlx.build` 编译脚本
-```python
-import sqlx
-
-my_script = """
-{% for n in table1,table2,table3 %}
-    {% if n == table1 %}
-        SELECT id, name FROM {n};
-    {% else%}
-        SELECT * FROM {n};
-    {% endif %}
-{% endfor %}
-"""
-
-sql = sqlx.build(my_script, pretty=True)
-print(sql)
 ```
 
 
 ### 使用 `sqlx` 命令行工具
 
-1. 直接执行 `sqlx` 命令，可一键编译当前目录下的所有脚本
+1. 直接执行 `sqlx` 命令，可一键编译当前目录下的所有 `.sqlx 脚本文件`
 ```
 $ ls
 test1.sqlx    test2.sqlx
@@ -224,5 +206,27 @@ Finish!
 $ ls test/dist
 test3.sql
 ```
+
+
+### 在 Python3 程序中使用 `sqlx.build` 方法
+```python
+import sqlx
+
+my_script = """
+{% for n in table1,table2,table3 %}
+    {% if n == table1 %}
+        SELECT id, name FROM {n};
+    {% else%}
+        SELECT * FROM {n};
+    {% endif %}
+{% endfor %}
+"""
+
+sql = sqlx.build(my_script, pretty=True)
+print(sql)
+```
+
+
+
 
 
