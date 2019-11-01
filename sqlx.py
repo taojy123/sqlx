@@ -7,11 +7,14 @@ import sys
 import re
 import traceback
 import pprint
+import random
+
+import pyperclip
 
 import sqlformat
 
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 # 构建后添加的头部文字
@@ -23,23 +26,49 @@ COMMENT_PREFIX = '-- !'
 # 目前支持的关系运算符
 OPERATORS = ['>', '<', '>=', '<=', '==', '!=']
 
+# 定义转义符
+ESCAPE = '\\'
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+def escape(content, escape_map=None):
+    # 转义处理，先只传原文，语法处理后再次调用该函数，将第一次访问的 escape_map 传入
+    if escape_map is None:
+        escape_map = {}
+        items = re.findall(r'\\\S', content)
+        for item in items:
+            value = item[1]
+            # 如果出现重复随机数会出错，概率太低，不特殊处理了
+            n = random.randint(1, 99999999)
+            key = f'[escape{n}]'
+            escape_map[key] = value
+            content = content.replace(item, key)
+        return content, escape_map
+    else:
+        assert isinstance(escape_map, dict)
+        for key, value in escape_map.items():
+            content = content.replace(key, value)
+        return content
+    
 
-def remove_space_line(sql):
+def remove_space_line(content):
     # 移除空行
     new_lines = []
-    for line in sql.splitlines():
+    for line in content.splitlines():
         if line.strip():
             new_lines.append(line)
     return '\n'.join(new_lines)
 
 
-def get_indent(s):
-    # 获取字符串前有多少个空格
-    return len(s) - len(s.lstrip())
+def remove_gap(content, n):
+    # 移除过多的空行 比如传入参数为 5 ,则会将文本中 5 个空行替换为 1 个空行
+    target = '\n' * n
+    while target in content:
+        content = content.replace(target, '\n')
+    return content
 
+def get_indent(s):
+    # 获取字符串前有多少个前导空格
+    return len(s) - len(s.lstrip())
 
 
 def render(content, define_map, block_map, local_map=None):
@@ -195,17 +224,22 @@ def render(content, define_map, block_map, local_map=None):
     return content
 
 
-def build(content, pretty=False):
-    # build sqlx content to sql
+def handle_import(content, path, define_map, block_map):
+    # 处理 import 和 sqlx 注释
+    # 通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 define 和 block
+    # 如果在当前脚本有重复同名变量或 block，会被覆盖以当前脚本为准
+    # import xxx
 
-    define_map = {}
-    block_map = {}
+    assert isinstance(define_map, dict)
+    assert isinstance(block_map, dict)
+    
+    if not path:
+        path = '.'
+    assert os.path.isdir(path), f'{path} 脚本所在目录不正确!'
 
-
-    # 处理 define 和 sqlx 注释
+    # 插入第一行空行
+    new_lines = ['']
     lines = content.splitlines()
-    # 确保第一行是空行
-    new_lines = [''] 
     for line in lines:
 
         if line.startswith(COMMENT_PREFIX):
@@ -215,38 +249,87 @@ def build(content, pretty=False):
             i = line.find(COMMENT_PREFIX)
             line = line[:i]
 
+        if line.lower().startswith('import '):
+            items = line.split()
+            assert len(items) == 2, f'`{line}` import 语法不正确!'
+            define, script_name = items
+            script_name += '.sqlx'
+            script_path = os.path.join(path, script_name)
+            assert os.path.isfile(script_path), f'{script_path} 导入模块路径不正确!'
+            
+            script_content = open(script_path, encoding='utf8').read()
+            script_content = handle_define(script_content, define_map)
+            handle_block(script_content, block_map)
+            continue
+
+        new_lines.append(line)
+
+    sqlx_content = '\n'.join(new_lines)
+
+    # pprint.pprint(define_map)
+    # pprint.pprint(block_map)
+    return sqlx_content
+
+
+def handle_define(content, define_map):
+    # 处理 define
+    # define a xxx
+    assert isinstance(define_map, dict)
+    new_lines = []
+    lines = content.splitlines()
+    for line in lines:
         if line.lower().startswith('define '):
-            line = line.replace('=', ' ')
+            line = line.replace('=', ' ')  # 兼容 define a = xxx 写法
             items = line.split()
             assert len(items) == 3, f'`{line}` define 语法不正确!'
             define, key, value = items
             define_map[key] = value
             continue
-
         new_lines.append(line)
-    # pprint.pprint(define_map)
-
+        
     sqlx_content = '\n'.join(new_lines)
-    # print(sqlx_content)
 
+    # pprint.pprint(define_map)
+    return sqlx_content
+
+
+def handle_block(content, block_map):
+    assert isinstance(block_map, dict)
     # 处理 block
-    block_pattern = r'\nblock\s+(.+?)\((.*?)\)[:\s]*\n(.*?)\nendblock'
-    blocks = re.findall(block_pattern, sqlx_content, re.S)
-    sqlx_content = re.sub(block_pattern, '', sqlx_content, flags=re.S)
+    # block foo()
+    #   ...
+    # endblock
+    block_pattern = r'\nblock\s+(.+?)\((.*?)\)[:\s]*\n(.*?)\nendblock'  # 兼容 block foo(): 写法
+    blocks = re.findall(block_pattern, content, re.S)
+    content = re.sub(block_pattern, '', content, flags=re.S)
     for block in blocks:
-        block_name, params, content = block
+        block_name, params, block_content = block
         params = params.split(',')
         params = [param.strip() for param in params if param.strip()]
         block_map[block_name] = {
             'params': params,
-            'content': content,
+            'content': block_content,
         }
     # pprint.pprint(block_map)
+    return content
 
 
-    sql = render(sqlx_content, define_map, block_map)
+def build(content, pretty=False, path='.'):
+    # build sqlx content to sql
+    
+    content, escape_map = escape(content)
+    
+    define_map = {}
+    block_map = {}
+    
+    content = handle_import(content, path, define_map, block_map)
+    content = handle_define(content, define_map)
+    content = handle_block(content, block_map)
+
+    sql = render(content, define_map, block_map)
     sql = sql.strip()
-    # sql = remove_space_line(sql)
+    sql = escape(sql, escape_map)
+    sql = remove_gap(sql, 5)
     sql = f'{HEADER}\n\n{sql}\n'
 
     # print(sql)
@@ -282,13 +365,19 @@ def auto(path='.', pretty=False):
     for file in files:
         # build xx.sqlx to dist/xx.sql
 
+        # sqlx 脚本所在目录
         dirname, filename = os.path.split(file)
-        dirname = os.path.join(dirname, 'dist')
-        filename = os.path.join(dirname, filename[:-1])
+        
+        # 要生成的 sql 所在目录
+        distname = os.path.join(dirname, 'dist')
+        
+        # 要生成的 sql 文件路径
+        filename = os.path.join(distname, filename[:-1])
 
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        if not os.path.isdir(distname):
+            os.makedirs(distname)
 
+        sqlx_content = ''
         for encoding in ['utf8', 'gbk']:
             try:
                 sqlx_content = open(file, encoding=encoding).read()
@@ -298,12 +387,20 @@ def auto(path='.', pretty=False):
                 
         if not encoding:
             print(file, 'read failed!')
+            continue
 
-        sql_content = build(sqlx_content, pretty)
+        sql_content = build(sqlx_content, pretty, dirname)
+        copied = ''
+        if os.path.isfile(filename):
+            old_content = open(filename, encoding=encoding).read()
+            if sql_content != old_content:
+                pyperclip.copy(sql_content)
+                copied = 'and Copied'
+        else:
+            pyperclip.copy(sql_content)
+            copied = 'and Copied'
         open(filename, 'w', encoding=encoding).write(sql_content)
-        print(f'{filename} built')
-
-    print('Finish!')
+        print(f'{filename} Built {copied}')
 
 
 if __name__ == '__main__':

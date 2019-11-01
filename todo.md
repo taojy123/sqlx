@@ -7,9 +7,11 @@
 - if  ok
 - PYPI ok
 - readme ok
-- import
-- if 嵌套
-- for 嵌套
+- escape ok
+- 自动复制 ok
+- import ok
 - unittest
 - SublimeText 插件
+- if 嵌套
+- for 嵌套
 - VSCode 插件

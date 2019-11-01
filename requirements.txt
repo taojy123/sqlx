@@ -1,3 +1,5 @@
 # Python3
 
+pyperclip
 js2py
+

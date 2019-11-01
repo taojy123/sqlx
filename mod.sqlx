@@ -1,0 +1,16 @@
+
+define colume  name
+define colume2 score
+
+block good_students(score)
+    (
+        SELECT
+            *
+        FROM
+            students
+        WHERE
+            score > {score}
+    ) AS good_students
+endblock
+
+

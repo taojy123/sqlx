@@ -112,7 +112,7 @@ SELECT age FROM table3;
 ```sql
 define a 8
 
-{% if a > 4 %}
+{% if $a > 4 %}
     SELECT * FROM table1;
 {% endif %}
 ```
@@ -125,7 +125,7 @@ SELECT * FROM table1;
 示例2:
 ```sql
 {% for n in table1,table2,table3 %}
-    {% if n == table1 %}
+    {% if $n == table1 %}
         SELECT id, name FROM {n};
     {% else%}
         SELECT * FROM {n};
@@ -142,6 +142,81 @@ SELECT * FROM table3;
 
 
 更多示例可参考 [demo.sqlx](https://github.com/taojy123/sqlx/blob/master/demo.sqlx)
+
+
+### 5. 生成 `{` `}` 字符
+如果你需要在生成的 sql 内容中包含 `{` `}` 这样的字符，不能直接在 sqlx 中写 `{` 或 `}`，因为这样会被认为是变量的引用标记
+
+你需要在这些字符前加上一个转义符（默认是`\`），如 `\{` `\}` 这样即可
+
+示例:
+```sql
+define cc dd
+SELECT * FROM table1 WHERE name = 'aa\{bb\}{cc}'
+```
+
+编译生成 sql 为:
+```sql
+SELECT * FROM table1 WHERE name = 'aa{bb}dd'
+```
+
+
+### 6. 使用 `import` 导入模块
+
+通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 define 和 block
+
+如果在当前脚本有重复同名变量或 block，会被覆盖以当前脚本为准
+
+示例:
+```sql
+-- mod.sqlx
+define colume  name
+define colume2 score
+
+block good_students(score)
+    (
+        SELECT
+            *
+        FROM
+            students
+        WHERE
+            score > {score}
+    ) AS good_students
+endblock
+```
+
+```sql
+import mod
+define colume2 age
+SELECT {colume} from teachers WHERE {colume2} > 10;
+SELECT name FROM {good_students(60)};
+SELECT count(*) FROM {good_students(80)};
+```
+
+编译生成 sql 为:
+```sql
+SELECT name from teachers WHERE age > 10;
+SELECT name FROM 
+    (
+        SELECT
+            *
+        FROM
+            students
+        WHERE
+            score > 60
+    ) AS good_students
+;
+SELECT count(*) FROM 
+    (
+        SELECT
+            *
+        FROM
+            students
+        WHERE
+            score > 80
+    ) AS good_students
+;
+```
 
 
 -------
@@ -214,9 +289,9 @@ import sqlx
 
 my_script = """
 {% for n in table1,table2,table3 %}
-    {% if n == table1 %}
+    {% if $n == table1 %}
         SELECT id, name FROM {n};
-    {% else%}
+    {% else %}
         SELECT * FROM {n};
     {% endif %}
 {% endfor %}
@@ -229,4 +304,26 @@ print(sql)
 
 
 
+
+
+## 版本更新说明 
+
+
+### v0.1.1
+
+第一个可用版本发布
+
+- 支持 `escape` （默认`\`）
+- 自动复制编译的 `sql` 进剪切板
+- import sqlx 脚本功能
+
+
+### v0.1.0
+
+第一个可用版本发布
+
+- 支持 `define` 语法
+- 支持 `block` 语法
+- 支持 `for` 语法
+- 支持 `if`  语法
 

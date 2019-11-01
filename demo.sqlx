@@ -1,5 +1,11 @@
 -- ! sqlx 脚本示例
 
+-- ! 通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 define 和 block
+-- ! 如果当前脚本有重复同名变量或 block，会被覆盖
+import mod
+
+define colume2 age
+
 
 -- ! define 关键词定义全局变量
 define pronum pro002
@@ -28,18 +34,15 @@ SELECT
     '{pronum}' AS product_no,
     mash_contract_no,
     -- ! if 判断语法
-    {% if m == a %}
+    {% if $m == a %}
         1 as is_a,
     {% endif %}
-    {% if m == 'b' %}
-        1 as is_b,
-    {% endif %}
-    {% if n > 1 %}
+    {% if $n > 1 %}
         1 as is_more,
     {% else %}
         0 as is_more,
     {% endif %}
-    {n}_{m} as mark
+    {n}_{m}_$\{xxx\} as mark
 FROM
     account_check
 LEFT JOIN {mash_apply_mapping(mash_contract_no)} ON mash_apply_mapping.mash_contract_no = account_check.contract_no
@@ -50,7 +53,14 @@ UNION ALL
         *, NULL AS mash_contract_no
     FROM
         mf_business_loan_apply_log
-
+; 
 {% endfor %}
 
+
+-- -----------------
+
+
+SELECT {colume} from teachers WHERE {colume2} > 10;
+SELECT name FROM {good_students(60)};
+SELECT count(*) FROM {good_students(80)};
 
