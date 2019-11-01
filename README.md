@@ -144,8 +144,9 @@ SELECT * FROM table3;
 更多示例可参考 [demo.sqlx](https://github.com/taojy123/sqlx/blob/master/demo.sqlx)
 
 
-### 5. 生成 `{` `}` 字符
-如果你需要在生成的 sql 内容中包含 `{` `}` 这样的字符，不能直接在 sqlx 中写 `{` 或 `}`，因为这样会被认为是变量的引用标记
+### 5. 处理 `{` `}` 字符
+
+如果你需要在生成的 sql 内容中包含 `{` `}` 这样的字符，不能直接在 sqlx 中写 `{` 或 `}`，因为这样会被认为是变量的引用的起止标记
 
 你需要在这些字符前加上一个转义符（默认是`\`），如 `\{` `\}` 这样即可
 
@@ -221,11 +222,11 @@ SELECT count(*) FROM
 
 -------
 
-## 使用方法
+## 安装使用方法
 
-`Windows 64位系统`，直接下载 [sqlx.exe](https://github.com/taojy123/sqlx/releases) 放置于 `.sqlx 脚本文件` 同目录下
+Windows 64位系统，无须安装，下载 [sqlx.exe](https://github.com/taojy123/sqlx/releases) 放置于 `.sqlx 脚本文件` 相同目录下
 
-双击 `sqlx.exe` 即可在 `dist` 目录中生成对应 `sql` 文件
+直接双击 `sqlx.exe` 运行，随后即可在 `dist` 目录中看到生成的 `sql` 文件
 
 
 -------
@@ -303,9 +304,6 @@ print(sql)
 
 
 
-
-
-
 ## 版本更新说明 
 
 
@@ -315,7 +313,7 @@ print(sql)
 
 - 支持 `escape` （默认`\`）
 - 自动复制编译的 `sql` 进剪切板
-- import sqlx 脚本功能
+- 支持 import 导入 sqlx 脚本模块
 
 
 ### v0.1.0
