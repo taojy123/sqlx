@@ -226,7 +226,7 @@ SELECT count(*) FROM
 
 Windows 64位系统，无须安装，下载 [sqlx.exe](https://github.com/taojy123/sqlx/releases) 放置于 `.sqlx 脚本文件` 相同目录下
 
-直接双击 `sqlx.exe` 运行，随后即可在 `dist` 目录中看到生成的 `sql` 文件
+直接双击 `sqlx.exe` 运行，随后即可在 `dist` 目录中看到生成的 .sql 文件
 
 
 -------
