@@ -232,9 +232,8 @@ def handle_import(content, path, define_map, block_map):
 
     assert isinstance(define_map, dict)
     assert isinstance(block_map, dict)
-    
     if not path:
-        path = '.'
+        path = os.getcwd()
     assert os.path.isdir(path), f'{path} 脚本所在目录不正确!'
 
     # 插入第一行空行
@@ -314,14 +313,14 @@ def handle_block(content, block_map):
     return content
 
 
-def build(content, pretty=False, path='.'):
+def build(content, pretty=False, path=''):
     # build sqlx content to sql
     
     content, escape_map = escape(content)
     
     define_map = {}
     block_map = {}
-    
+
     content = handle_import(content, path, define_map, block_map)
     content = handle_define(content, define_map)
     content = handle_block(content, block_map)
@@ -341,6 +340,7 @@ def build(content, pretty=False, path='.'):
 
 
 def auto(path='.', pretty=False):
+    
     # pip intall sqlx
     # sqlx [path/to/sqlxfiles]
 
