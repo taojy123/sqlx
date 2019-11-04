@@ -257,8 +257,10 @@ def handle_import(content, path, define_map, block_map):
             assert os.path.isfile(script_path), f'{script_path} 导入模块路径不正确!'
             
             script_content = open(script_path, encoding='utf8').read()
+            script_content = handle_import(script_content, path, define_map, block_map)
             script_content = handle_define(script_content, define_map)
-            handle_block(script_content, block_map)
+            script_content = handle_block(script_content, block_map)
+
             continue
 
         new_lines.append(line)
@@ -364,6 +366,8 @@ def auto(path='.', pretty=False):
 
     for file in files:
         # build xx.sqlx to dist/xx.sql
+
+        print('building', file)
 
         # sqlx 脚本所在目录
         dirname, filename = os.path.split(file)
