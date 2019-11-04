@@ -11,8 +11,6 @@ import random
 
 import pyperclip
 
-import sqlformat
-
 
 VERSION = '0.1.1'
 
@@ -336,6 +334,7 @@ def build(content, pretty=False, path=''):
     # print(sql)
 
     if pretty:
+        import sqlformat
         sql = sqlformat.sqlformat(sql)
 
     return sql
