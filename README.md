@@ -303,6 +303,11 @@ print(sql)
 ```
 
 
+## Sublime Text 插件
+
+https://github.com/taojy123/SublimeText-Sqlx
+
+
 
 ## 版本更新说明 
 

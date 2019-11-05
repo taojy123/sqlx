@@ -9,10 +9,8 @@ import traceback
 import pprint
 import random
 
-import pyperclip
 
-
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 
 # 构建后添加的头部文字
@@ -37,7 +35,8 @@ def escape(content, escape_map=None):
             value = item[1]
             # 如果出现重复随机数会出错，概率太低，不特殊处理了
             n = random.randint(1, 99999999)
-            key = f'[escape{n}]'
+            # 为兼容 python3.3 只能以 .format 方式代替 f''
+            key = '[escape{n}]'.format(**locals())
             escape_map[key] = value
             content = content.replace(item, key)
         return content, escape_map
@@ -107,7 +106,7 @@ def render(content, define_map, block_map, local_map=None):
         # {% if a > b %} ... {% else %} ... {% endif %}
         if_content = re.sub(r'\{\s*%\s*else\s*%\s*\}', r'{% else %}', if_content)
         ts = if_content.split(r'{% else %}')
-        assert len(ts) in [1, 2], f'{full_block} 内容编写错误!'
+        assert len(ts) in [1, 2], '{full_block} 内容编写错误!'.format(**locals())
         if_content = ts[0]
         if len(ts) == 2:
             else_content = ts[1]
@@ -117,12 +116,12 @@ def render(content, define_map, block_map, local_map=None):
         a1 = a2 = None
         for op in OPERATORS:
             if op in condition:
-                assert condition.count(op) == 1, f'{condition} 判定条件编写错误!'
+                assert condition.count(op) == 1, '{condition} 判定条件编写错误!'.format(**locals())
                 a1, a2 = condition.split(op)
                 a1 = a1.strip()
                 a2 = a2.strip()
                 break
-        assert a1 and a2, f'{condition} 未找到合法的关系运算符!'
+        assert a1 and a2, '{condition} 未找到合法的关系运算符!'.format(**locals())
 
         # 判断项默认以字符串类型比较
         # 如果以 $ 开头后接变量名，则转为对应的变量值
@@ -144,7 +143,7 @@ def render(content, define_map, block_map, local_map=None):
 
         a1 = repr(a1)
         a2 = repr(a2)
-        s = f'{a1} {op} {a2}'
+        s = '{a1} {op} {a2}'.format(**locals())
 
         try:
             result = eval(s)
@@ -171,20 +170,20 @@ def render(content, define_map, block_map, local_map=None):
     for tag in tags:
         key = tag.strip('{}').strip()
         if '(' not in key:
-            assert key in key_map, f'`{tag}` define 引用未找到!'
+            assert key in key_map, '`{tag}` define 引用未找到!'.format(**locals())
             value = key_map[key]
             # 对于简单的变量替换，直接 replace 就行了
             content = content.replace(tag, value)
         else:
             rs = re.findall(r'(.+?)\((.*?)\)', key)
-            assert len(rs) == 1, f'`{tag}` block 引用语法不正确!'
+            assert len(rs) == 1, '`{tag}` block 引用语法不正确!'.format(**locals())
             block_name, params = rs[0]
-            assert block_name in block_map, f'`{tag}` block 引用未找到!'
+            assert block_name in block_map, '`{tag}` block 引用未找到!'.format(**locals())
             block_content = block_map[block_name]['content']
             param_names = block_map[block_name]['params']
             params = params.split(',')
             params = [param.strip() for param in params if param.strip()]
-            assert len(param_names) == len(params), f'{tag} block 参数数量不正确!'
+            assert len(param_names) == len(params), '{tag} block 参数数量不正确!'.format(**locals())
             local_map = {}
             for name, value in zip(param_names, params):
                 if value.startswith('$') and value[1:] in key_map:
@@ -214,7 +213,8 @@ def render(content, define_map, block_map, local_map=None):
                 rendered_block = rendered_block.replace('\n', '\n' + ' ' * n)
                 rendered_block = '\n' + ' ' * n + rendered_block + '\n' + ' ' * n
                 # 先尝试替换 tag 两边有空格的情况
-                line = line.replace(f' {tag} ' , rendered_block)
+                tag2 = ' {tag} '.format(**locals())
+                line = line.replace(tag2 , rendered_block)
                 line = line.replace(tag, rendered_block)
         new_lines.append(line)
     content = '\n'.join(new_lines)
@@ -232,7 +232,7 @@ def handle_import(content, path, define_map, block_map):
     assert isinstance(block_map, dict)
     if not path:
         path = os.getcwd()
-    assert os.path.isdir(path), f'{path} 脚本所在目录不正确!'
+    assert os.path.isdir(path), '{path} 脚本所在目录不正确!'.format(**locals())
 
     # 插入第一行空行
     new_lines = ['']
@@ -248,11 +248,11 @@ def handle_import(content, path, define_map, block_map):
 
         if line.lower().startswith('import '):
             items = line.split()
-            assert len(items) == 2, f'`{line}` import 语法不正确!'
+            assert len(items) == 2, '`{line}` import 语法不正确!'.format(**locals())
             define, script_name = items
             script_name += '.sqlx'
             script_path = os.path.join(path, script_name)
-            assert os.path.isfile(script_path), f'{script_path} 导入模块路径不正确!'
+            assert os.path.isfile(script_path), '{script_path} 导入模块路径不正确!'.format(**locals())
             
             script_content = open(script_path, encoding='utf8').read()
             script_content = handle_import(script_content, path, define_map, block_map)
@@ -280,7 +280,7 @@ def handle_define(content, define_map):
         if line.lower().startswith('define '):
             line = line.replace('=', ' ')  # 兼容 define a = xxx 写法
             items = line.split()
-            assert len(items) == 3, f'`{line}` define 语法不正确!'
+            assert len(items) == 3, '`{line}` define 语法不正确!'.format(**locals())
             define, key, value = items
             define_map[key] = value
             continue
@@ -329,7 +329,8 @@ def build(content, pretty=False, path=''):
     sql = sql.strip()
     sql = escape(sql, escape_map)
     sql = remove_gap(sql, 5)
-    sql = f'{HEADER}\n\n{sql}\n'
+    header = HEADER
+    sql = '{header}\n\n{sql}\n'.format(**locals())
 
     # print(sql)
 
@@ -341,11 +342,13 @@ def build(content, pretty=False, path=''):
 
 
 def auto(path='.', pretty=False):
+
+    import pyperclip
     
     # pip intall sqlx
     # sqlx [path/to/sqlxfiles]
-
-    print(f'==== sqlx v{VERSION} ====')
+    version = VERSION
+    print('==== sqlx v{version} ===='.format(**locals()))
 
     args = sys.argv
     if len(args) > 1:
@@ -403,7 +406,7 @@ def auto(path='.', pretty=False):
             pyperclip.copy(sql_content)
             copied = 'and Copied'
         open(filename, 'w', encoding=encoding).write(sql_content)
-        print(f'{filename} Built {copied}')
+        print('{filename} Built {copied}'.format(**locals()))
 
 
 if __name__ == '__main__':
