@@ -8,9 +8,10 @@ import re
 import traceback
 import pprint
 import random
+import copy
 
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 
 # 构建后添加的头部文字
@@ -184,7 +185,7 @@ def render(content, define_map, block_map, local_map=None):
             params = params.split(',')
             params = [param.strip() for param in params if param.strip()]
             assert len(param_names) == len(params), '{tag} block 参数数量不正确!'.format(**locals())
-            local_map = {}
+            local_map = copy.copy(key_map)
             for name, value in zip(param_names, params):
                 if value.startswith('$') and value[1:] in key_map:
                     value = key_map[value[1:]]
@@ -199,7 +200,7 @@ def render(content, define_map, block_map, local_map=None):
         for tag in rendered_map.keys():
             if tag in line:
                 # 遍历每一行，替换行中的块内容，并加上合适的缩进
-                # 例如 `select * from {myblock} where 1=1` 渲染后得到:
+                # 例如 `select * from {myblock()} where 1=1` 渲染后得到:
                 # select * from 
                 #     (
                 #         SELECT
