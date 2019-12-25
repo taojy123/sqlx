@@ -1,64 +1,61 @@
--- ! sqlx 脚本示例
-
--- ! 通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 define 和 block
--- ! 如果当前脚本有重复同名变量或 block，会被覆盖
-import mod
-
-define colume2 age
+-- ! sqlx 脚本语法示例
 
 
--- ! define 关键词定义全局变量
-define pronum pro002
+-- ! var 关键词定义全局变量
+var flag = f001
 
 
--- ! block 定义一个可重用的内容块（类似函数），并可定义形式参数
-block mash_apply_mapping(group_key)
+-- ! func 定义一个可重用的内容块（类似函数），并可接受形式参数
+func t1(day):
     (
         SELECT
-            mash_contract_no,
-            max(unique_no) AS unique_no,
-            max(apply_no) AS apply_no
+            name,
+            max(date) AS max_date
         FROM
-            loan_front_manager.mf_business_apply
+            product
+        WHERE
+            date <= '{day}'
         GROUP BY
-            {group_key}
-    ) AS mash_apply_mapping
-endblock
+            name
+    ) as t1
+end
 
 
 -- ! for 循环语法
 {% for n|m in 1|a,2|b,3|c %}
--- --- 循环 --- {n} --- {m} -----
-SELECT
-    id,
-    '{pronum}' AS product_no,
-    mash_contract_no,
-    -- ! if 判断语法
-    {% if $m == a %}
-        1 as is_a,
-    {% endif %}
-    {% if $n > 1 %}
-        1 as is_more,
-    {% else %}
-        0 as is_more,
-    {% endif %}
-    {n}_{m}_$\{xxx\} as mark
-FROM
-    account_check
-LEFT JOIN {mash_apply_mapping(mash_contract_no)} ON mash_apply_mapping.mash_contract_no = account_check.contract_no
-WHERE
-    unique_no IS NOT NULL
-UNION ALL
+    -- --- 循环 --- {n} --- {m} -----
     SELECT
-        *, NULL AS mash_contract_no
+        -- ！ 使用变量
+        '{flag}' AS flag,
+
+        -- ! if 判断语法
+        {% if $m == a %}
+            1 as is_a,
+        {% endif %}
+
+        {% if $n > 1 %}
+            1 as is_more,
+        {% else %}
+            0 as is_more,
+        {% endif %}
+
+        -- ! 转义符 \
+        {n}_{m}_$\{xxx\} as mark
     FROM
-        mf_business_loan_apply_log
-; 
+        product
+    LEFT JOIN {t1(20191208)}  -- ! 调用 func
+    ON t1.max_date = product.date AND t1.name = product.name
+    ; 
 {% endfor %}
 
 
 -- -----------------
 
+-- ! 通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 var 和 func
+-- ! 如果当前脚本有重复同名变量或 func，会被覆盖
+import mod
+
+var colume2 = age
 
 SELECT {colume} from teachers WHERE {colume2} > 10;
 SELECT name FROM {good_students(60)};

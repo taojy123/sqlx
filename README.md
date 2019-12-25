@@ -5,31 +5,207 @@ SQL Extension
 强大的 SQL 语法拓展，目标是打造 "易读易写 方便维护" 的 sql 脚本
 
 
+## 应用场景
+
+假设有一张商品价目表(product)，每天价格变动的商品都会更新报价。
+
+例如，苹果的最新价格为 10 元, 因为苹果最新的一次报价是在 20191211, 当时价格为 10 元。
+
+name(商品名称)|category(类别)|price(价格)|date(报价日期)
+-|-|-|-
+苹果|水果|15|20191208
+香蕉|水果|18|20191208
+橘子|水果|12|20191208
+空心菜|蔬菜|8|20191208
+菠菜|蔬菜|9|20191208
+芹菜|蔬菜|12|20191208
+豆芽|蔬菜|5|20191208
+猪肉|肉类|55|20191208
+牛肉|肉类|60|20191208
+羊肉|肉类|65|20191208
+香蕉|水果|16|20191209
+橘子|水果|11|20191209
+芹菜|蔬菜|11|20191209
+豆芽|蔬菜|8|20191209
+牛肉|肉类|62|20191209
+羊肉|肉类|69|20191209
+苹果|水果|11|20191210
+橘子|水果|13|20191210
+空心菜|蔬菜|6|20191210
+菠菜|蔬菜|8|20191210
+芹菜|蔬菜|12|20191210
+猪肉|肉类|60|20191210
+牛肉|肉类|56|20191210
+苹果|水果|10|20191211
+香蕉|水果|22|20191211
+橘子|水果|18|20191211
+空心菜|蔬菜|12|20191211
+菠菜|蔬菜|6|20191211
+芹菜|蔬菜|11|20191211
+豆芽|蔬菜|10|20191211
+牛肉|肉类|50|20191211
+羊肉|肉类|45|20191211
+空心菜|蔬菜|11|20191212
+菠菜|蔬菜|12|20191212
+芹菜|蔬菜|14|20191212
+豆芽|蔬菜|9|20191212
+猪肉|肉类|38|20191212
+羊肉|肉类|70|20191212
+
+现在要求通过 sql 统计出 `20191212 这天每个类别的平均价格 比 20191210 那天涨了多少` ?
+
+正常情况下我们可能会写出这样的 sql
+```sql
+SELECT
+    a1.category AS `类别`,
+    a1.avg_price AS `20191210 平均价格`,
+    a2.avg_price AS `20191212 平均价格`,
+    (a2.avg_price - a1.avg_price) AS `涨价金额`
+FROM
+    (
+        -- 再求出各类别 20191210 前最后一次报价的平均价格
+        SELECT
+            product.category,
+            avg(product.price) AS avg_price
+        FROM
+            (
+                -- 先求出各商品在 20191210 前最后一次报价的日期
+                SELECT
+                    name,
+                    max(date) AS max_date
+                FROM
+                    product
+                WHERE
+                    date <= '20191210'
+                GROUP BY
+                    name
+            ) AS t1
+        LEFT JOIN product 
+        ON t1.name = product.name AND t1.max_date = product.date
+        GROUP BY
+            product.category
+    ) AS a1
+LEFT JOIN 
+    (
+        -- 再求出各类别 20191212 前最后一次报价的平均价格
+        SELECT
+            product.category,
+            avg(product.price) AS avg_price
+        FROM
+            (
+                -- 先求出各商品在 20191212 前最后一次报价的日期
+                SELECT
+                    name,
+                    max(date) AS max_date
+                FROM
+                    product
+                WHERE
+                    date <= '20191212'
+                GROUP BY
+                    name
+            ) AS t2
+        LEFT JOIN product 
+        ON t2.name = product.name AND t2.max_date = product.date
+        GROUP BY
+            product.category
+    ) AS a2 
+ON a1.category = a2.category
+```
+
+得到统计结果如下:
+
+类别|20191210 平均价格|20191212 平均价格|涨价金额
+-|-|-|-
+水果|13.3333|16.6667|3.3334
+肉类|61.6667|52.6667|-9.0000
+蔬菜|8.5000|11.5000|3.0000
+
+
+传统做法虽然得到的结果是正确的，但同时暴露出以下问题:
+1. 子查询三层嵌套，代码可读性极低
+2. `t1` `t2` 两个子查询内容基本一致，也就说我们要维护两处相同的代码
+3. `a1` `a2` 两个子查询也基本一致，并且其中相同的注释我们要写两遍，感觉太"蠢"了
+4. 这只是个很简单的示例，在实际生产中，针对更复杂的统计需求，代码的复杂度将会以指数形式递增
+
+
+下面看看如何使用 sqlx 来解决上述问题
+```sql
+func product_max_date(day)
+    -- 子查询: 统计出各个商品在 {day} 前最后一次报价的日期
+    (
+        SELECT
+            name,
+            max(date) AS max_date
+        FROM
+            product
+        WHERE
+            date <= '{day}'
+        GROUP BY
+            name
+    )
+end
+
+func date_avg_price(day):
+    -- 子查询: 统计出 {day} 这天各个类别的平均价格
+    (
+        SELECT
+            product.category,
+            avg(product.price) AS avg_price
+        FROM
+            {product_max_date($day)} AS t1
+        LEFT JOIN product 
+        ON t1.name = product.name AND t1.max_date = product.date
+        GROUP BY
+            product.category
+    )
+end
+
+SELECT
+    a1.category AS `类别`,
+    a1.avg_price AS `20191210 平均价格`,
+    a2.avg_price AS `20191212 平均价格`,
+    (a2.avg_price - a1.avg_price) AS `涨价金额`
+FROM
+    {date_avg_price(20191210)} AS a1
+LEFT JOIN 
+    {date_avg_price(20191212)} AS a2
+ON a1.category = a2.category
+```
+
+
+优势非常明显:
+1. 一段短小的 `SELECT` 加上两个子查询的定义就搞定了，代码逻辑清晰，可读性高
+2. `a1` `a2` 使用类似 `函数` 的概念进行封装，通过传入不同的参数来生成不同的子查询内容
+3. 相同逻辑的代码片段只需要写一遍，大大降低了代码维护的工作量
+4. 使用 sqlx 提供的编译工具或插件，可快速编译成 sql 代码，在数据库中执行结果一致
+
+
 ## 语法简介
 
-### 1. 通过 `define` 定义变量，可在脚本中反复引用
+### 1. 通过 `var` 定义变量，可在脚本中反复引用
 
 示例:
 ```sql
-define field_name age
+var field_name = age
+var field_value = 30
 
-SELECT {field_name} from students WHERE {field_name} > 10;
-SELECT {field_name} from teachers WHERE {field_name} > 10;
+SELECT {field_name} from students WHERE {field_name} < {field_value};
+SELECT {field_name} from teachers WHERE {field_name} > {field_value};
 ```
 
 编译生成 sql 为:
 ```sql
-SELECT age from students WHERE age > 10;
-SELECT age from teachers WHERE age > 10;
+SELECT age from students WHERE age < 30;
+SELECT age from teachers WHERE age > 30;
 ```
 
 
-### 2. 通过 `block` 定义脚本片段，并反复引用
+### 2. 通过 `func` 定义脚本片段，并反复引用
 
 示例:
 ```sql
 -- ! 定义片段
-block good_students(score)
+func good_students(score):
     (
         SELECT
             *
@@ -38,7 +214,7 @@ block good_students(score)
         WHERE
             score > {score}
     ) AS good_students
-endblock
+end
 
 SELECT name FROM {good_students(80)};
 SELECT count(*) FROM {good_students(80)};
@@ -110,7 +286,7 @@ SELECT age FROM table3;
 
 示例1:
 ```sql
-define a 8
+var a 8
 
 {% if $a > 4 %}
     SELECT * FROM table1;
@@ -127,7 +303,7 @@ SELECT * FROM table1;
 {% for n in table1,table2,table3 %}
     {% if $n == table1 %}
         SELECT id, name FROM {n};
-    {% else%}
+    {% else %}
         SELECT * FROM {n};
     {% endif %}
 {% endfor %}
@@ -152,7 +328,7 @@ SELECT * FROM table3;
 
 示例:
 ```sql
-define cc dd
+var cc dd
 SELECT * FROM table1 WHERE name = 'aa\{bb\}{cc}'
 ```
 
@@ -164,17 +340,17 @@ SELECT * FROM table1 WHERE name = 'aa{bb}dd'
 
 ### 6. 使用 `import` 导入模块
 
-通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 define 和 block
+通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 var 和 func
 
-如果在当前脚本有重复同名变量或 block，会被覆盖以当前脚本为准
+如果在当前脚本有重复同名变量或 func，会被覆盖以当前脚本为准
 
 示例:
 ```sql
 -- mod.sqlx
-define colume  name
-define colume2 score
+var colume  name
+var colume2 score
 
-block good_students(score)
+func good_students(score):
     (
         SELECT
             *
@@ -183,12 +359,12 @@ block good_students(score)
         WHERE
             score > {score}
     ) AS good_students
-endblock
+end
 ```
 
 ```sql
 import mod
-define colume2 age
+var colume2 age
 SELECT {colume} from teachers WHERE {colume2} > 10;
 SELECT name FROM {good_students(60)};
 SELECT count(*) FROM {good_students(80)};
@@ -232,7 +408,7 @@ Windows 64位系统，无须安装，下载 [sqlx.exe](https://github.com/taojy1
 -------
 
 
-## 其他系统平台，通过 Python3 安装使用
+## 其他系统平台，可通过 Python3 安装使用
 
 如果你的系统无法运行 `sqlx.exe`，可以先安装 [Python3](https://www.python.org/downloads/)，然后使用 `pip` 命令一键安装
 
@@ -303,7 +479,7 @@ print(sql)
 ```
 
 
-## Sublime Text 插件
+## 使用 Sublime Text 插件
 
 https://github.com/taojy123/SublimeText-Sqlx
 
@@ -312,12 +488,22 @@ https://github.com/taojy123/SublimeText-Sqlx
 ## 版本更新说明 
 
 
+### v0.2.0
+
+为提高脚本书写体验，变更了语法关键词
+
+- `define` 改成 `var`
+- `block .. endblock` 改成 `func .. end`
+
+老版本语法目前依旧兼容
+
+
 ### v0.1.1
 
 第一个可用版本发布
 
 - 支持 `escape` （默认`\`）
-- 自动复制编译的 `sql` 进剪切板
+- 自动复制编译后的 `sql` 进剪切板
 - 支持 import 导入 sqlx 脚本模块
 
 
@@ -325,8 +511,8 @@ https://github.com/taojy123/SublimeText-Sqlx
 
 第一个可用版本发布
 
-- 支持 `define` 语法
-- 支持 `block` 语法
+- 支持 `var` 语法
+- 支持 `func` 语法
 - 支持 `for` 语法
 - 支持 `if`  语法
 

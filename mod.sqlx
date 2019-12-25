@@ -1,8 +1,8 @@
 
-define colume  name
-define colume2 score
+var colume = name
+var colume2 = score
 
-block good_students(score)
+func good_students(score):
     (
         SELECT
             *
@@ -11,6 +11,6 @@ block good_students(score)
         WHERE
             score > {score}
     ) AS good_students
-endblock
+end
 
 

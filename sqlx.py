@@ -11,7 +11,7 @@ import random
 import copy
 
 
-VERSION = '0.1.3'
+VERSION = '0.2.0'
 
 
 # 构建后添加的头部文字
@@ -69,17 +69,17 @@ def get_indent(s):
     return len(s) - len(s.lstrip())
 
 
-def render(content, define_map, block_map, local_map=None):
+def render(content, var_map, func_map, local_map=None):
     # render sqlt content to sql
 
     key_map = {}
-    key_map.update(define_map)
+    key_map.update(var_map)
     if local_map:
         key_map.update(local_map) 
 
     # 处理 for 循环，暂时不支持嵌套
-    for_blocks = re.findall(r'(\{\s*%\s*for\s+(.+?)\s+in\s+(.+?)\s*%\s*\}(.*?)\{\s*%\s*endfor\s*%\s*\})', content, re.S)
-    for full_block, for_names, for_values, for_content in for_blocks:
+    for_funcs = re.findall(r'(\{\s*%\s*for\s+(.+?)\s+in\s+(.+?)\s*%\s*\}(.*?)\{\s*%\s*endfor\s*%\s*\})', content, re.S)
+    for full_func, for_names, for_values, for_content in for_funcs:
         for_names = for_names.split('|')
         for_values = for_values.split(',')
         for_values = [t.split('|') for t in for_values]
@@ -87,27 +87,27 @@ def render(content, define_map, block_map, local_map=None):
         # => 
         # for_names = ['n', 'm']
         # for_values = [['1', 'a'], ['2', 'b'], ['3', 'c']]
-        rendered_blocks = []
+        rendered_funcs = []
         for values in for_values:
             local_map = {}
             local_map.update(key_map)
             for for_name, for_value in zip(for_names, values):
                 local_map[for_name] = for_value
             # local_map => {n: 1, m: a}
-            rendered_block = render(for_content, define_map, block_map, local_map)
-            rendered_block = remove_space_line(rendered_block)
-            rendered_blocks.append(rendered_block)
+            rendered_func = render(for_content, var_map, func_map, local_map)
+            rendered_func = remove_space_line(rendered_func)
+            rendered_funcs.append(rendered_func)
 
-        rendered_blocks = '\n'.join(rendered_blocks)
-        content = content.replace(full_block, rendered_blocks)
+        rendered_funcs = '\n'.join(rendered_funcs)
+        content = content.replace(full_func, rendered_funcs)
 
     # 处理 if 判断，暂时不支持嵌套
-    if_blocks = re.findall(r'(\{\s*%\s*if(.+?)%\s*\}(.*?)\{\s*%\s*endif\s*%\s*\})', content, re.S)
-    for full_block, condition, if_content in if_blocks:
+    if_funcs = re.findall(r'(\{\s*%\s*if(.+?)%\s*\}(.*?)\{\s*%\s*endif\s*%\s*\})', content, re.S)
+    for full_func, condition, if_content in if_funcs:
         # {% if a > b %} ... {% else %} ... {% endif %}
         if_content = re.sub(r'\{\s*%\s*else\s*%\s*\}', r'{% else %}', if_content)
         ts = if_content.split(r'{% else %}')
-        assert len(ts) in [1, 2], '{full_block} 内容编写错误!'.format(**locals())
+        assert len(ts) in [1, 2], '{full_func} 内容编写错误!'.format(**locals())
         if_content = ts[0]
         if len(ts) == 2:
             else_content = ts[1]
@@ -160,39 +160,39 @@ def render(content, define_map, block_map, local_map=None):
         else:
             rendering_content = else_content
 
-        rendered_block = render(rendering_content, define_map, block_map, key_map)
-        rendered_block = remove_space_line(rendered_block)
-        content = content.replace(full_block, rendered_block)
+        rendered_func = render(rendering_content, var_map, func_map, key_map)
+        rendered_func = remove_space_line(rendered_func)
+        content = content.replace(full_func, rendered_func)
 
-    # 处理 define 替换和 block 替换
+    # 处理 var 替换和 func (func) 替换
     tags = re.findall(r'\{.+?\}', content)
     tags = set(tags)
     rendered_map = {}
     for tag in tags:
         key = tag.strip('{}').strip()
         if '(' not in key:
-            assert key in key_map, '`{tag}` define 引用未找到!'.format(**locals())
+            assert key in key_map, '`{tag}` var 引用未找到!'.format(**locals())
             value = key_map[key]
             # 对于简单的变量替换，直接 replace 就行了
             content = content.replace(tag, value)
         else:
             rs = re.findall(r'(.+?)\((.*?)\)', key)
-            assert len(rs) == 1, '`{tag}` block 引用语法不正确!'.format(**locals())
-            block_name, params = rs[0]
-            assert block_name in block_map, '`{tag}` block 引用未找到!'.format(**locals())
-            block_content = block_map[block_name]['content']
-            param_names = block_map[block_name]['params']
+            assert len(rs) == 1, '`{tag}` func 引用语法不正确!'.format(**locals())
+            func_name, params = rs[0]
+            assert func_name in func_map, '`{tag}` func 引用未找到!'.format(**locals())
+            func_content = func_map[func_name]['content']
+            param_names = func_map[func_name]['params']
             params = params.split(',')
             params = [param.strip() for param in params if param.strip()]
-            assert len(param_names) == len(params), '{tag} block 参数数量不正确!'.format(**locals())
+            assert len(param_names) == len(params), '{tag} func 参数数量不正确!'.format(**locals())
             local_map = copy.copy(key_map)
             for name, value in zip(param_names, params):
                 if value.startswith('$') and value[1:] in key_map:
                     value = key_map[value[1:]]
                 local_map[name] = value
-            rendered_block = render(block_content, define_map, block_map, local_map)
+            rendered_func = render(func_content, var_map, func_map, local_map)
             # 对于块替换，为了更好的视觉体验，先将渲染后的块内容保存下来，接下来用到
-            rendered_map[tag] = rendered_block
+            rendered_map[tag] = rendered_func
 
     lines = content.splitlines()
     new_lines = []
@@ -200,37 +200,38 @@ def render(content, define_map, block_map, local_map=None):
         for tag in rendered_map.keys():
             if tag in line:
                 # 遍历每一行，替换行中的块内容，并加上合适的缩进
-                # 例如 `select * from {myblock()} where 1=1` 渲染后得到:
+                # 例如 `select * from {myfunc()} where 1=1` 渲染后得到:
                 # select * from 
                 #     (
                 #         SELECT
                 #             id, name
                 #         FROM
                 #             mytable
-                #     ) AS myblock
+                #     ) AS myfunc
                 # where 1=1
                 n = get_indent(line)
-                rendered_block = rendered_map[tag]
-                rendered_block = rendered_block.replace('\n', '\n' + ' ' * n)
-                rendered_block = '\n' + ' ' * n + rendered_block + '\n' + ' ' * n
+                n = n - 4 if n >= 4 else 0  # 假设用户会在 func 中缩进 4 格
+                rendered_func = rendered_map[tag]
+                rendered_func = rendered_func.replace('\n', '\n' + ' ' * n)
+                rendered_func = '\n' + ' ' * n + rendered_func + '\n' + ' ' * n
                 # 先尝试替换 tag 两边有空格的情况
                 tag2 = ' {tag} '.format(**locals())
-                line = line.replace(tag2 , rendered_block)
-                line = line.replace(tag, rendered_block)
+                line = line.replace(tag2 , rendered_func)
+                line = line.replace(tag, rendered_func)
         new_lines.append(line)
     content = '\n'.join(new_lines)
 
     return content
 
 
-def handle_import(content, path, define_map, block_map):
+def handle_import(content, path, var_map, func_map):
     # 处理 import 和 sqlx 注释
-    # 通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 define 和 block
-    # 如果在当前脚本有重复同名变量或 block，会被覆盖以当前脚本为准
+    # 通过 import 可以引入现有的 sqlx 脚本文件作，但只能导入其中的 var 和 func
+    # 如果在当前脚本有重复同名变量或 func，会被覆盖以当前脚本为准
     # import xxx
 
-    assert isinstance(define_map, dict)
-    assert isinstance(block_map, dict)
+    assert isinstance(var_map, dict)
+    assert isinstance(func_map, dict)
     if not path:
         path = os.getcwd()
     assert os.path.isdir(path), '{path} 脚本所在目录不正确!'.format(**locals())
@@ -250,15 +251,15 @@ def handle_import(content, path, define_map, block_map):
         if line.lower().startswith('import '):
             items = line.split()
             assert len(items) == 2, '`{line}` import 语法不正确!'.format(**locals())
-            define, script_name = items
+            var, script_name = items
             script_name += '.sqlx'
             script_path = os.path.join(path, script_name)
             assert os.path.isfile(script_path), '{script_path} 导入模块路径不正确!'.format(**locals())
             
             script_content = open(script_path, encoding='utf8').read()
-            script_content = handle_import(script_content, path, define_map, block_map)
-            script_content = handle_define(script_content, define_map)
-            script_content = handle_block(script_content, block_map)
+            script_content = handle_import(script_content, path, var_map, func_map)
+            script_content = handle_var(script_content, var_map)
+            script_content = handle_func(script_content, func_map)
 
             continue
 
@@ -266,51 +267,61 @@ def handle_import(content, path, define_map, block_map):
 
     sqlx_content = '\n'.join(new_lines)
 
-    # pprint.pprint(define_map)
-    # pprint.pprint(block_map)
+    # pprint.pprint(var_map)
+    # pprint.pprint(func_map)
     return sqlx_content
 
 
-def handle_define(content, define_map):
-    # 处理 define
-    # define a xxx
-    assert isinstance(define_map, dict)
+def handle_var(content, var_map):
+    # 处理 var
+    # var a = xxx
+    assert isinstance(var_map, dict)
     new_lines = []
     lines = content.splitlines()
     for line in lines:
-        if line.lower().startswith('define '):
-            line = line.replace('=', ' ')  # 兼容 define a = xxx 写法
+        # 兼容老版本 define 写法 
+        if line.lower().startswith('var ') or line.lower().startswith('define '):
+            # `var a = xxx` 与 `var a xxx` 两种写法都可以
+            line = line.replace('=', ' ', 1)  
             items = line.split()
-            assert len(items) == 3, '`{line}` define 语法不正确!'.format(**locals())
-            define, key, value = items
-            define_map[key] = value
+            assert len(items) == 3, '`{line}` var 语法不正确!'.format(**locals())
+            var, key, value = items
+            var_map[key] = value
             continue
         new_lines.append(line)
         
     sqlx_content = '\n'.join(new_lines)
 
-    # pprint.pprint(define_map)
+    # pprint.pprint(var_map)
     return sqlx_content
 
 
-def handle_block(content, block_map):
-    assert isinstance(block_map, dict)
-    # 处理 block
-    # block foo()
+def handle_func(content, func_map):
+    assert isinstance(func_map, dict)
+    # 处理 func
+    # func foo()
     #   ...
-    # endblock
-    block_pattern = r'\nblock\s+(.+?)\((.*?)\)[:\s]*\n(.*?)\nendblock'  # 兼容 block foo(): 写法
-    blocks = re.findall(block_pattern, content, re.S)
-    content = re.sub(block_pattern, '', content, flags=re.S)
-    for block in blocks:
-        block_name, params, block_content = block
+    # end
+
+    # foo() 后面加不加:都可以
+    func_pattern = r'\nfunc\s+(.+?)\((.*?)\)[:\s]*\n(.*?)\nend'
+    funcs = re.findall(func_pattern, content, re.S)
+    content = re.sub(func_pattern, '', content, flags=re.S)
+
+    # 兼容老版本 block foo() ... endblock 写法
+    func_pattern_old = r'\nblock\s+(.+?)\((.*?)\)[:\s]*\n(.*?)\nendblock'  
+    funcs += re.findall(func_pattern_old, content, re.S)
+    content = re.sub(func_pattern_old, '', content, flags=re.S)
+
+    for func in funcs:
+        func_name, params, func_content = func
         params = params.split(',')
         params = [param.strip() for param in params if param.strip()]
-        block_map[block_name] = {
+        func_map[func_name] = {
             'params': params,
-            'content': block_content,
+            'content': func_content,
         }
-    # pprint.pprint(block_map)
+    # pprint.pprint(func_map)
     return content
 
 
@@ -319,14 +330,14 @@ def build(content, pretty=False, path=''):
     
     content, escape_map = escape(content)
     
-    define_map = {}
-    block_map = {}
+    var_map = {}
+    func_map = {}
 
-    content = handle_import(content, path, define_map, block_map)
-    content = handle_define(content, define_map)
-    content = handle_block(content, block_map)
+    content = handle_import(content, path, var_map, func_map)
+    content = handle_var(content, var_map)
+    content = handle_func(content, func_map)
 
-    sql = render(content, define_map, block_map)
+    sql = render(content, var_map, func_map)
     sql = sql.strip()
     sql = escape(sql, escape_map)
     sql = remove_gap(sql, 5)
@@ -416,5 +427,5 @@ if __name__ == '__main__':
     except:
         traceback.print_exc()
         print('See https://github.com/taojy123/sqlx/blob/master/README.md for help')
-    input('Press Enter to Exit..')
+    # input('Press Enter to Exit..')
 
