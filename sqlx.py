@@ -27,6 +27,20 @@ OPERATORS = ['>', '<', '>=', '<=', '==', '!=']
 ESCAPE = '\\'
 
 
+class SqlxException(Exception):
+
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+def make_sure(flag, message='something went wrong!'):
+    if not flag:
+        raise SqlxException(message)
+
+
 def escape(content, escape_map=None):
     # 转义处理，先只传原文，语法处理后再次调用该函数，将第一次访问的 escape_map 传入
     if escape_map is None:
@@ -42,7 +56,7 @@ def escape(content, escape_map=None):
             content = content.replace(item, key)
         return content, escape_map
     else:
-        assert isinstance(escape_map, dict)
+        make_sure(isinstance(escape_map, dict))
         for key, value in escape_map.items():
             content = content.replace(key, value)
         return content
@@ -107,7 +121,7 @@ def render(content, var_map, func_map, local_map=None):
         # {% if a > b %} ... {% else %} ... {% endif %}
         if_content = re.sub(r'\{\s*%\s*else\s*%\s*\}', r'{% else %}', if_content)
         ts = if_content.split(r'{% else %}')
-        assert len(ts) in [1, 2], '{full_func} 内容编写错误!'.format(**locals())
+        make_sure(len(ts) in [1, 2], '{full_func} 内容编写错误!'.format(**locals()))
         if_content = ts[0]
         if len(ts) == 2:
             else_content = ts[1]
@@ -117,12 +131,12 @@ def render(content, var_map, func_map, local_map=None):
         a1 = a2 = None
         for op in OPERATORS:
             if op in condition:
-                assert condition.count(op) == 1, '{condition} 判定条件编写错误!'.format(**locals())
+                make_sure(condition.count(op) == 1, '{condition} 判定条件编写错误!'.format(**locals()))
                 a1, a2 = condition.split(op)
                 a1 = a1.strip()
                 a2 = a2.strip()
                 break
-        assert a1 and a2, '{condition} 未找到合法的关系运算符!'.format(**locals())
+        make_sure(a1 and a2, '{condition} 未找到合法的关系运算符!'.format(**locals()))
 
         # 判断项默认以字符串类型比较
         # 如果以 $ 开头后接变量名，则转为对应的变量值
@@ -153,7 +167,7 @@ def render(content, var_map, func_map, local_map=None):
             print(s)
             raise e
 
-        assert result in (True, False)
+        make_sure(result in (True, False))
 
         if result:
             rendering_content = if_content
@@ -171,20 +185,20 @@ def render(content, var_map, func_map, local_map=None):
     for tag in tags:
         key = tag.strip('{}').strip()
         if '(' not in key:
-            assert key in key_map, '`{tag}` var 引用未找到!'.format(**locals())
+            make_sure(key in key_map, '`{tag}` var 引用未找到!'.format(**locals()))
             value = key_map[key]
             # 对于简单的变量替换，直接 replace 就行了
             content = content.replace(tag, value)
         else:
             rs = re.findall(r'(.+?)\((.*?)\)', key)
-            assert len(rs) == 1, '`{tag}` func 引用语法不正确!'.format(**locals())
+            make_sure(len(rs) == 1, '`{tag}` func 引用语法不正确!'.format(**locals())) 
             func_name, params = rs[0]
-            assert func_name in func_map, '`{tag}` func 引用未找到!'.format(**locals())
+            make_sure(func_name in func_map, '`{tag}` func 引用未找到!'.format(**locals()))
             func_content = func_map[func_name]['content']
             param_names = func_map[func_name]['params']
             params = params.split(',')
             params = [param.strip() for param in params if param.strip()]
-            assert len(param_names) == len(params), '{tag} func 参数数量不正确!'.format(**locals())
+            make_sure(len(param_names) == len(params), '{tag} func 参数数量不正确!'.format(**locals()))
             local_map = copy.copy(key_map)
             for name, value in zip(param_names, params):
                 if value.startswith('$') and value[1:] in key_map:
@@ -230,11 +244,11 @@ def handle_import(content, path, var_map, func_map):
     # 如果在当前脚本有重复同名变量或 func，会被覆盖以当前脚本为准
     # import xxx
 
-    assert isinstance(var_map, dict)
-    assert isinstance(func_map, dict)
+    make_sure(isinstance(var_map, dict))
+    make_sure(isinstance(func_map, dict))
     if not path:
         path = os.getcwd()
-    assert os.path.isdir(path), '{path} 脚本所在目录不正确!'.format(**locals())
+    make_sure(os.path.isdir(path), '{path} 脚本所在目录不正确!'.format(**locals()))
 
     # 插入第一行空行
     new_lines = ['']
@@ -250,11 +264,11 @@ def handle_import(content, path, var_map, func_map):
 
         if line.lower().startswith('import '):
             items = line.split()
-            assert len(items) == 2, '`{line}` import 语法不正确!'.format(**locals())
+            make_sure(len(items) == 2, '`{line}` import 语法不正确!'.format(**locals()))
             var, script_name = items
             script_name += '.sqlx'
             script_path = os.path.join(path, script_name)
-            assert os.path.isfile(script_path), '{script_path} 导入模块路径不正确!'.format(**locals())
+            make_sure(os.path.isfile(script_path), '{script_path} 导入模块路径不正确!'.format(**locals()))
             
             script_content = open(script_path, encoding='utf8').read()
             script_content = handle_import(script_content, path, var_map, func_map)
@@ -275,7 +289,7 @@ def handle_import(content, path, var_map, func_map):
 def handle_var(content, var_map):
     # 处理 var
     # var a = xxx
-    assert isinstance(var_map, dict)
+    make_sure(isinstance(var_map, dict))
     new_lines = []
     lines = content.splitlines()
     for line in lines:
@@ -284,7 +298,7 @@ def handle_var(content, var_map):
             # `var a = xxx` 与 `var a xxx` 两种写法都可以
             line = line.replace('=', ' ', 1)  
             items = line.split()
-            assert len(items) == 3, '`{line}` var 语法不正确!'.format(**locals())
+            make_sure(len(items) == 3, '`{line}` var 语法不正确!'.format(**locals()))
             var, key, value = items
             var_map[key] = value
             continue
@@ -297,7 +311,7 @@ def handle_var(content, var_map):
 
 
 def handle_func(content, func_map):
-    assert isinstance(func_map, dict)
+    make_sure(isinstance(func_map, dict))
     # 处理 func
     # func foo()
     #   ...
