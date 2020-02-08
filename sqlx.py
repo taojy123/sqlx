@@ -2,6 +2,8 @@
 # 目标是打造 "易读易写 方便维护" 的 sql 脚本
 # 语法参考 test.sqlx
 
+# Python3.3
+
 import os
 import sys
 import re
