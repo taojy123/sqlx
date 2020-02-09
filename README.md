@@ -398,7 +398,7 @@ SELECT count(*) FROM
 
 -------
 
-## 安装使用方法
+## 安装使用
 
 Windows 64位系统，无须安装，下载 [sqlx.exe](https://github.com/taojy123/sqlx/releases) 放置于 `.sqlx 脚本文件` 相同目录下
 
@@ -478,11 +478,15 @@ sql = sqlx.build(my_script, pretty=True)
 print(sql)
 ```
 
+-------
 
 ## 使用 Sublime Text 插件
 
-https://github.com/taojy123/SublimeText-Sqlx
+在 Sublime Text 可搜索安装 `Sqlx Builder` 插件，在 Build System 中选择 `Sqlx`，可快捷将 sqlx 脚本编译为 sql。
 
+插件项目地址：https://github.com/taojy123/SublimeText-Sqlx
+
+-------
 
 
 ## 版本更新说明 
