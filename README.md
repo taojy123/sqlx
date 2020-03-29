@@ -441,9 +441,16 @@ print(sql)
 
 ## 使用 Sublime Text 插件
 
-在 Sublime Text 可搜索安装 `Sqlx Builder` 插件，在 Build System 中选择 `Sqlx`，可快捷将 sqlx 脚本编译为 sql。
+
+Sqlx 插件已被 `Sublime Text` 官方收录。
+
+可搜索安装 `Sqlx Builder` 插件，在 Build System 中选择 `Sqlx`，可快捷将 sqlx 脚本编译为 sql。
 
 插件项目地址：https://github.com/taojy123/SublimeText-Sqlx
+
+![](https://raw.githubusercontent.com/taojy123/SublimeText-Sqlx/master/sqlx.png)
+
+![](https://raw.githubusercontent.com/taojy123/SublimeText-Sqlx/master/sqlx2.png)
 
 -------
 
