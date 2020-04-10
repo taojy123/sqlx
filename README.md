@@ -366,6 +366,19 @@ Windows 64位系统，可以直接下载 [sqlx.exe](https://github.com/taojy123
 
 -------
 
+## 使用 Sublime Text 插件
+
+
+Sqlx 插件已被 `Sublime Text` 官方收录。
+
+可搜索安装 `Sqlx Builder` 插件，在 Build System 中选择 `Sqlx`，可快捷将 sqlx 脚本编译为 sql。
+
+![](https://raw.githubusercontent.com/taojy123/SublimeText-Sqlx/master/sqlx.png)
+
+![](https://raw.githubusercontent.com/taojy123/SublimeText-Sqlx/master/sqlx2.png)
+
+-------
+
 
 ## 其他系统平台，可通过 Python3 安装使用
 
@@ -437,20 +450,6 @@ sql = sqlx.build(my_script, pretty=True)
 print(sql)
 ```
 
--------
-
-## 使用 Sublime Text 插件
-
-
-Sqlx 插件已被 `Sublime Text` 官方收录。
-
-可搜索安装 `Sqlx Builder` 插件，在 Build System 中选择 `Sqlx`，可快捷将 sqlx 脚本编译为 sql。
-
-插件项目地址：https://github.com/taojy123/SublimeText-Sqlx
-
-![](https://raw.githubusercontent.com/taojy123/SublimeText-Sqlx/master/sqlx.png)
-
-![](https://raw.githubusercontent.com/taojy123/SublimeText-Sqlx/master/sqlx2.png)
 
 -------
 
